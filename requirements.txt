@@ -1,0 +1,30 @@
+# Core Libraries
+pandas
+numpy
+
+# Power System Modeling
+# pypsa  # Uncomment if using PyPSA
+# Add other specific power system libraries if needed
+
+# Network Analysis
+networkx
+
+# Time Series Forecasting
+# prophet # Uncomment if using Prophet (fbprophet)
+
+# Machine Learning / Data Analysis
+scikit-learn
+
+# Visualization / Dashboarding
+dash
+plotly
+
+# Geospatial Analysis
+geopandas
+
+# Other potential libraries based on detailed implementation:
+# openpyxl # For reading Excel files
+# requests # For API calls
+# sqlalchemy # For database interaction
+# OSeMOSYS specific dependencies? # If using OSeMOSYS
+# TIMES specific dependencies? # If using TIMES 

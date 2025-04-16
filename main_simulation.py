@@ -307,7 +307,7 @@ class BangladeshEnergySimulation:
 
 # --- Main Execution Block --- 
 if __name__ == "__main__":
-    # --- Plausible Synthetic Configuration Data --- 
+    # --- Plausible Synthetic Configuration Data (Baseline) --- 
     config = {
         'simulation_years': (2025, 2040), # Shorter duration for testing
         'economic_growth_rate': 0.065, # Average annual GDP growth
@@ -442,22 +442,74 @@ if __name__ == "__main__":
         }
     }
 
+    # --- Define Scenarios --- 
+    baseline_scenario = {
+        'name': 'baseline',
+        'config_overrides': {}
+    }
+
+    high_renewables_scenario = {
+        'name': 'high_renewables',
+        'config_overrides': {
+            # Example overrides for a high renewables scenario
+            'renewable_params': {
+                 # Faster cost reduction or lower base cost
+                 'solar_params': {'base_cost_mwh': 55}, # Lower than baseline 65
+                 'wind_params': {'base_cost_mwh': 65}, # Lower than baseline 75
+                 'learning_curves': {'solar_lr': 0.20, 'wind_lr': 0.15}, # Faster learning
+                 # Higher integration tolerance
+                 'integration_params': {'max_vre_penetration': 0.6, 'curtailment_start_thresh': 0.5},
+                 'base_solar_mw': 800, # Ensure base matches baseline if not overridden
+                 'base_wind_mw': 150 # Ensure base matches baseline if not overridden
+             },
+            'market_params': {
+                 # Higher RE support
+                 're_support_params': {'fit_solar': 90, 'auction_target_solar_mw_yr': 600, 'auction_target_wind_mw_yr': 200}
+             },
+            # Optional: Adjust fossil/nuclear pipeline if RE is prioritized
+            'generation_params': {
+                'expansion_pipeline': [
+                    # Keep nuclear for this example, but delay or remove some fossil?
+                    {'year': 2025, 'tech': 'nuclear', 'capacity': 1200, 'plant_id': 'Rooppur_1'},
+                    {'year': 2026, 'tech': 'nuclear', 'capacity': 1200, 'plant_id': 'Rooppur_2'},
+                    {'year': 2026, 'tech': 'solar_util', 'capacity': 800}, # Increased solar early
+                    # {'year': 2027, 'tech': 'coal', 'capacity': 1320, 'plant_id': 'Matarbari_Ext'}, # Removed coal expansion
+                    {'year': 2028, 'tech': 'wind', 'capacity': 500}, # Increased wind
+                    {'year': 2029, 'tech': 'solar_util', 'capacity': 1000}, # Increased solar
+                    # {'year': 2030, 'tech': 'gas_cc', 'capacity': 700}, # Removed gas expansion
+                ]
+                 # Inherit other generation_params from baseline config implicitly during run
+            }
+             # Note: Overrides are shallow. Deep merging might be needed for nested dicts
+             # like technology_parameters if only one sub-key needs changing.
+        }
+    }
+
+    scenarios_to_run = [baseline_scenario, high_renewables_scenario]
+
     # --- Initialize and Run Simulation --- 
     simulation = BangladeshEnergySimulation(config)
     start_sim_year, end_sim_year = config['simulation_years']
-    results = simulation.run_simulation(start_year=start_sim_year, end_year=end_sim_year) # Use years from config
+    # Pass the list of scenarios to run
+    results = simulation.run_simulation(start_year=start_sim_year, end_year=end_sim_year, scenarios=scenarios_to_run)
 
     # --- Analyze and Report Results --- 
     if results:
-        print("\n--- Analyzing Results and Generating Report --- ")
+        print("\n--- Analyzing Results and Generating Reports --- ")
         analyzer = EnergyResultsAnalyzer(results)
-        # Generate report for the first scenario (e.g., 'baseline')
-        first_scenario_name = list(results.keys())[0]
-        # analyzer.create_dashboard_data(scenario=first_scenario_name) # If generating data for external dashboard
-        report_path = analyzer.generate_html_report(scenario=first_scenario_name)
-        if report_path:
-             print(f"Simulation report generated: {report_path}")
-        else:
-             print("Failed to generate report.")
+        # Generate a report for each scenario that produced results
+        generated_reports = []
+        for scenario_name in results.keys():
+             print(f"Generating report for scenario: {scenario_name}...")
+             report_path = analyzer.generate_html_report(scenario=scenario_name)
+             if report_path:
+                 print(f"  Report generated: {report_path}")
+                 generated_reports.append(report_path)
+             else:
+                 print(f"  Failed to generate report for {scenario_name}.")
+        
+        if not generated_reports:
+             print("No reports were generated.")
+
     else:
         print("Simulation did not produce results.") 
